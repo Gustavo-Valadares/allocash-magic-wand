@@ -12,15 +12,26 @@ import {
   Check,
   Loader2,
   X,
+  GripVertical,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
-} from "@/components/ui/carousel";
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+  useSortable,
+  arrayMove,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -181,35 +192,50 @@ function Index() {
 
   const activeSet = sets.find((s) => s.id === activeSetId);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleReorderSets = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setSets((prev) => {
+      const oldIndex = prev.findIndex((s) => s.id === active.id);
+      const newIndex = prev.findIndex((s) => s.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  };
+
   return (
     <div className="min-h-screen pb-16">
-      <header className="border-b bg-card">
-        <div className="container max-w-5xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-                <Wallet className="h-5 w-5 text-primary-foreground" />
+      <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b">
+        <header>
+          <div className="container max-w-5xl mx-auto px-4 pt-4 pb-3 sm:py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-10 w-10 shrink-0 rounded-xl bg-primary flex items-center justify-center">
+                  <Wallet className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-lg sm:text-xl font-bold truncate">Gestão de Orçamento</h1>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                    Distribua seu capital por porcentagem
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold">Gestão de Orçamento</h1>
-                <p className="text-sm text-muted-foreground">
-                  Distribua seu capital por porcentagem
-                </p>
-              </div>
+              <Link to="/signup" className="shrink-0">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <UserPlus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Cadastrar</span>
+                </Button>
+              </Link>
             </div>
-            <Link to="/signup">
-              <Button variant="outline" size="sm" className="gap-2">
-                <UserPlus className="w-4 h-4" />
-                <span className="hidden sm:inline">Cadastrar</span>
-              </Button>
-            </Link>
           </div>
-        </div>
-      </header>
-
-      <main className="container max-w-5xl mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
-        <section className="space-y-3">
-          <label className="text-sm font-medium text-muted-foreground">
+        </header>
+        <div className="container max-w-5xl mx-auto px-4 pb-3 sm:pb-4">
+          <label className="text-xs sm:text-sm font-medium text-muted-foreground block mb-1.5">
             Capital Total
           </label>
           <div className="relative">
@@ -217,15 +243,17 @@ function Index() {
               R$
             </span>
             <Input
-              className="pl-11 h-12 sm:h-14 text-xl sm:text-2xl font-semibold"
+              className="pl-11 h-11 sm:h-14 text-lg sm:text-2xl font-semibold bg-background"
               placeholder="0,00"
               value={capital}
               onChange={(e) => setCapital(e.target.value)}
               inputMode="decimal"
             />
           </div>
-        </section>
+        </div>
+      </div>
 
+      <main className="container max-w-5xl mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
         <Collapsible open={setsOpen} onOpenChange={setSetsOpen} asChild>
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-2">
@@ -263,91 +291,30 @@ function Index() {
                   </CardContent>
                 </Card>
               ) : (
-                <Carousel opts={{ align: "start" }} className="w-full">
-                  <CarouselContent className="-ml-3">
-                    {sets.map((set) => {
-                      const isActive = set.id === activeSetId;
-                      const isApplying = applyingId === set.id;
-                      return (
-                        <CarouselItem
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleReorderSets}
+                >
+                  <SortableContext
+                    items={sets.map((s) => s.id)}
+                    strategy={horizontalListSortingStrategy}
+                  >
+                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory">
+                      {sets.map((set) => (
+                        <SortableFilterCard
                           key={set.id}
-                          className="pl-3 basis-[78%] sm:basis-1/2 lg:basis-1/3"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => handleApplySet(set)}
-                            disabled={isActive || !!applyingId}
-                            className={`group relative rounded-2xl p-5 h-full w-full text-left bg-card border border-border shadow-sm transition-all hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 disabled:hover:translate-y-0 disabled:cursor-default ${
-                              isActive ? "border-primary ring-1 ring-primary" : ""
-                            }`}
-                          >
-                            <div className="space-y-3">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <p className="font-bold text-base truncate text-foreground">
-                                    {set.name}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {set.reserves.length} reservas
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-1 shrink-0">
-                                  {isApplying && (
-                                    <span className="flex items-center gap-1.5 text-xs bg-primary/10 text-primary rounded-full px-2 py-1">
-                                      <Loader2 className="h-3 w-3 animate-spin" />
-                                      Aplicando
-                                    </span>
-                                  )}
-                                  {isActive && !isApplying && (
-                                    <span className="flex items-center gap-1 text-xs bg-primary/10 text-primary rounded-full px-2 py-1">
-                                      <Check className="h-3 w-3" />
-                                      Aplicado
-                                    </span>
-                                  )}
-                                  <span
-                                    role="button"
-                                    tabIndex={0}
-                                    aria-label="Excluir filtro"
-                                    className="h-7 w-7 inline-flex items-center justify-center rounded-md text-destructive hover:bg-destructive/10 transition-colors"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteSet(set.id);
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter" || e.key === " ") {
-                                        e.stopPropagation();
-                                        handleDeleteSet(set.id);
-                                      }
-                                    }}
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="flex flex-wrap gap-1.5">
-                                {set.reserves.slice(0, 4).map((r) => (
-                                  <span
-                                    key={r.id}
-                                    className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary"
-                                  >
-                                    {r.name} {r.percentage}%
-                                  </span>
-                                ))}
-                                {set.reserves.length > 4 && (
-                                  <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                                    +{set.reserves.length - 4}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </button>
-                        </CarouselItem>
-                      );
-                    })}
-                  </CarouselContent>
-                  <CarouselPrevious className="hidden sm:flex" />
-                  <CarouselNext className="hidden sm:flex" />
-                </Carousel>
+                          set={set}
+                          isActive={set.id === activeSetId}
+                          isApplying={applyingId === set.id}
+                          applyingAny={!!applyingId}
+                          onApply={() => handleApplySet(set)}
+                          onDelete={() => handleDeleteSet(set.id)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               )}
             </CollapsibleContent>
           </section>
@@ -485,6 +452,124 @@ function Index() {
         onSave={handleSaveSet}
         initialName={activeSet?.name ?? ""}
       />
+    </div>
+  );
+}
+
+interface SortableFilterCardProps {
+  set: ReserveSet;
+  isActive: boolean;
+  isApplying: boolean;
+  applyingAny: boolean;
+  onApply: () => void;
+  onDelete: () => void;
+}
+
+function SortableFilterCard({
+  set,
+  isActive,
+  isApplying,
+  applyingAny,
+  onApply,
+  onDelete,
+}: SortableFilterCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: set.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`snap-start shrink-0 basis-[78%] sm:basis-[48%] lg:basis-[32%] ${
+        isDragging ? "z-10 opacity-80" : ""
+      }`}
+    >
+      <div
+        className={`group relative rounded-2xl p-5 h-full w-full bg-card border border-border shadow-sm transition-all hover:border-primary/50 hover:shadow-md ${
+          isActive ? "border-primary ring-1 ring-primary" : ""
+        }`}
+      >
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2 min-w-0">
+              <button
+                type="button"
+                aria-label="Arrastar para reordenar"
+                className="mt-0.5 -ml-1 h-6 w-6 shrink-0 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent cursor-grab active:cursor-grabbing touch-none"
+                {...attributes}
+                {...listeners}
+              >
+                <GripVertical className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={onApply}
+                disabled={isActive || applyingAny}
+                className="min-w-0 text-left disabled:cursor-default"
+              >
+                <p className="font-bold text-base truncate text-foreground">
+                  {set.name}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {set.reserves.length} reservas
+                </p>
+              </button>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {isApplying && (
+                <span className="flex items-center gap-1.5 text-xs bg-primary/10 text-primary rounded-full px-2 py-1">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Aplicando
+                </span>
+              )}
+              {isActive && !isApplying && (
+                <span className="flex items-center gap-1 text-xs bg-primary/10 text-primary rounded-full px-2 py-1">
+                  <Check className="h-3 w-3" />
+                  Aplicado
+                </span>
+              )}
+              <button
+                type="button"
+                aria-label="Excluir filtro"
+                className="h-7 w-7 inline-flex items-center justify-center rounded-md text-destructive hover:bg-destructive/10 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onApply}
+            disabled={isActive || applyingAny}
+            className="w-full text-left disabled:cursor-default"
+          >
+            <div className="flex flex-wrap gap-1.5">
+              {set.reserves.slice(0, 4).map((r) => (
+                <span
+                  key={r.id}
+                  className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary"
+                >
+                  {r.name} {r.percentage}%
+                </span>
+              ))}
+              {set.reserves.length > 4 && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                  +{set.reserves.length - 4}
+                </span>
+              )}
+            </div>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
