@@ -192,35 +192,50 @@ function Index() {
 
   const activeSet = sets.find((s) => s.id === activeSetId);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleReorderSets = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setSets((prev) => {
+      const oldIndex = prev.findIndex((s) => s.id === active.id);
+      const newIndex = prev.findIndex((s) => s.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  };
+
   return (
     <div className="min-h-screen pb-16">
-      <header className="border-b bg-card">
-        <div className="container max-w-5xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-                <Wallet className="h-5 w-5 text-primary-foreground" />
+      <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b">
+        <header>
+          <div className="container max-w-5xl mx-auto px-4 pt-4 pb-3 sm:py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-10 w-10 shrink-0 rounded-xl bg-primary flex items-center justify-center">
+                  <Wallet className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-lg sm:text-xl font-bold truncate">Gestão de Orçamento</h1>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                    Distribua seu capital por porcentagem
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold">Gestão de Orçamento</h1>
-                <p className="text-sm text-muted-foreground">
-                  Distribua seu capital por porcentagem
-                </p>
-              </div>
+              <Link to="/signup" className="shrink-0">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <UserPlus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Cadastrar</span>
+                </Button>
+              </Link>
             </div>
-            <Link to="/signup">
-              <Button variant="outline" size="sm" className="gap-2">
-                <UserPlus className="w-4 h-4" />
-                <span className="hidden sm:inline">Cadastrar</span>
-              </Button>
-            </Link>
           </div>
-        </div>
-      </header>
-
-      <main className="container max-w-5xl mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
-        <section className="space-y-3">
-          <label className="text-sm font-medium text-muted-foreground">
+        </header>
+        <div className="container max-w-5xl mx-auto px-4 pb-3 sm:pb-4">
+          <label className="text-xs sm:text-sm font-medium text-muted-foreground block mb-1.5">
             Capital Total
           </label>
           <div className="relative">
@@ -228,16 +243,18 @@ function Index() {
               R$
             </span>
             <Input
-              className="pl-11 h-12 sm:h-14 text-xl sm:text-2xl font-semibold"
+              className="pl-11 h-11 sm:h-14 text-lg sm:text-2xl font-semibold bg-background"
               placeholder="0,00"
               value={capital}
               onChange={(e) => setCapital(e.target.value)}
               inputMode="decimal"
             />
           </div>
-        </section>
+        </div>
+      </div>
 
-        <Collapsible open={setsOpen} onOpenChange={setSetsOpen} asChild>
+      <main className="container max-w-5xl mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-2">
               <CollapsibleTrigger asChild>
