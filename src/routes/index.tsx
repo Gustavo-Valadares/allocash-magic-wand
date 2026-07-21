@@ -210,31 +210,32 @@ function Index() {
 
   return (
     <div className="min-h-screen pb-16">
-      <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b">
-        <header>
-          <div className="container max-w-5xl mx-auto px-4 pt-4 pb-3 sm:py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="h-10 w-10 shrink-0 rounded-xl bg-primary flex items-center justify-center">
-                  <Wallet className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <div className="min-w-0">
-                  <h1 className="text-lg sm:text-xl font-bold truncate">Gestão de Orçamento</h1>
-                  <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                    Distribua seu capital por porcentagem
-                  </p>
-                </div>
+      <header>
+        <div className="container max-w-5xl mx-auto px-4 pt-4 pb-3 sm:py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-10 w-10 shrink-0 rounded-xl bg-primary flex items-center justify-center">
+                <Wallet className="h-5 w-5 text-primary-foreground" />
               </div>
-              <Link to="/signup" className="shrink-0">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <UserPlus className="w-4 h-4" />
-                  <span className="hidden sm:inline">Cadastrar</span>
-                </Button>
-              </Link>
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-xl font-bold truncate">Gestão de Orçamento</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                  Distribua seu capital por porcentagem
+                </p>
+              </div>
             </div>
+            <Link to="/signup" className="shrink-0">
+              <Button variant="outline" size="sm" className="gap-2">
+                <UserPlus className="w-4 h-4" />
+                <span className="hidden sm:inline">Cadastrar</span>
+              </Button>
+            </Link>
           </div>
-        </header>
-        <div className="container max-w-5xl mx-auto px-4 pb-3 sm:pb-4">
+        </div>
+      </header>
+
+      <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b">
+        <div className="container max-w-5xl mx-auto px-4 py-3 sm:py-4">
           <label className="text-xs sm:text-sm font-medium text-muted-foreground block mb-1.5">
             Capital Total
           </label>
