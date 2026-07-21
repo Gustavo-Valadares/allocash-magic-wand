@@ -254,7 +254,7 @@ function Index() {
       </div>
 
       <main className="container max-w-5xl mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
-
+        <Collapsible open={setsOpen} onOpenChange={setSetsOpen} asChild>
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-2">
               <CollapsibleTrigger asChild>
