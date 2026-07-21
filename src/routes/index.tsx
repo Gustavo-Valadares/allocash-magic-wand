@@ -455,3 +455,121 @@ function Index() {
     </div>
   );
 }
+
+interface SortableFilterCardProps {
+  set: ReserveSet;
+  isActive: boolean;
+  isApplying: boolean;
+  applyingAny: boolean;
+  onApply: () => void;
+  onDelete: () => void;
+}
+
+function SortableFilterCard({
+  set,
+  isActive,
+  isApplying,
+  applyingAny,
+  onApply,
+  onDelete,
+}: SortableFilterCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: set.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`snap-start shrink-0 basis-[78%] sm:basis-[48%] lg:basis-[32%] ${
+        isDragging ? "z-10 opacity-80" : ""
+      }`}
+    >
+      <div
+        className={`group relative rounded-2xl p-5 h-full w-full bg-card border border-border shadow-sm transition-all hover:border-primary/50 hover:shadow-md ${
+          isActive ? "border-primary ring-1 ring-primary" : ""
+        }`}
+      >
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2 min-w-0">
+              <button
+                type="button"
+                aria-label="Arrastar para reordenar"
+                className="mt-0.5 -ml-1 h-6 w-6 shrink-0 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent cursor-grab active:cursor-grabbing touch-none"
+                {...attributes}
+                {...listeners}
+              >
+                <GripVertical className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={onApply}
+                disabled={isActive || applyingAny}
+                className="min-w-0 text-left disabled:cursor-default"
+              >
+                <p className="font-bold text-base truncate text-foreground">
+                  {set.name}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {set.reserves.length} reservas
+                </p>
+              </button>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {isApplying && (
+                <span className="flex items-center gap-1.5 text-xs bg-primary/10 text-primary rounded-full px-2 py-1">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Aplicando
+                </span>
+              )}
+              {isActive && !isApplying && (
+                <span className="flex items-center gap-1 text-xs bg-primary/10 text-primary rounded-full px-2 py-1">
+                  <Check className="h-3 w-3" />
+                  Aplicado
+                </span>
+              )}
+              <button
+                type="button"
+                aria-label="Excluir filtro"
+                className="h-7 w-7 inline-flex items-center justify-center rounded-md text-destructive hover:bg-destructive/10 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onApply}
+            disabled={isActive || applyingAny}
+            className="w-full text-left disabled:cursor-default"
+          >
+            <div className="flex flex-wrap gap-1.5">
+              {set.reserves.slice(0, 4).map((r) => (
+                <span
+                  key={r.id}
+                  className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary"
+                >
+                  {r.name} {r.percentage}%
+                </span>
+              ))}
+              {set.reserves.length > 4 && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                  +{set.reserves.length - 4}
+                </span>
+              )}
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
