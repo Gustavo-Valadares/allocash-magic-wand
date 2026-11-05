@@ -105,6 +105,29 @@ function Index() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sets));
   }, [sets]);
 
+  // Salvamento automático: quando um filtro está ativo, alterações nas reservas são persistidas
+  useEffect(() => {
+    if (!activeSetId || applyingId) return;
+    const t = setTimeout(() => {
+      let changed = false;
+      setSets((prev) =>
+        prev.map((s) => {
+          if (s.id !== activeSetId) return s;
+          const same =
+            JSON.stringify(s.reserves.map((r) => [r.name, r.percentage])) ===
+            JSON.stringify(reserves.map((r) => [r.name, r.percentage]));
+          if (same) return s;
+          changed = true;
+          return { ...s, reserves: [...reserves] };
+        }),
+      );
+      setTimeout(() => {
+        if (changed) toast("Filtros salvos automaticamente", { duration: 1500 });
+      }, 0);
+    }, 500);
+    return () => clearTimeout(t);
+  }, [reserves, activeSetId, applyingId]);
+
   const capitalValue =
     parseFloat(capital.replace(/[^\d.,]/g, "").replace(",", ".")) || 0;
 
