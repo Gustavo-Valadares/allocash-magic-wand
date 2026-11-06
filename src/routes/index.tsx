@@ -13,7 +13,9 @@ import {
   Loader2,
   X,
   GripVertical,
+  Save,
 } from "lucide-react";
+import { addRecord, recordSignature } from "@/lib/history";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -137,6 +139,22 @@ function Index() {
   );
 
   const remainingPercentage = 100 - totalPercentage;
+
+  const [savedSig, setSavedSig] = useState<string | null>(null);
+  const currentSig = recordSignature(capitalValue, reserves);
+  const canRecord = capitalValue > 0 && reserves.length > 0;
+  const alreadySaved = savedSig === currentSig;
+
+  const handleSaveRecord = () => {
+    if (!canRecord || alreadySaved) return;
+    addRecord({
+      filter: activeSet?.name ?? "Sem filtro",
+      capital: capitalValue,
+      reserves: reserves.map((r) => ({ name: r.name, percentage: r.percentage })),
+    });
+    setSavedSig(currentSig);
+    toast.success("Registro salvo", { description: "Disponível em Estatísticas." });
+  };
 
   const handleSave = (name: string, percentage: number) => {
     if (editingReserve) {
@@ -458,6 +476,22 @@ function Index() {
           </section>
         </Collapsible>
       </main>
+
+      {canRecord && (
+        <Button
+          onClick={handleSaveRecord}
+          disabled={alreadySaved}
+          aria-label="Salvar Registro"
+          className={`fixed right-4 bottom-20 md:bottom-6 z-40 h-14 rounded-full px-5 gap-2 shadow-lg transition-all disabled:opacity-100 ${
+            alreadySaved
+              ? "bg-muted text-muted-foreground border border-border shadow-none"
+              : ""
+          }`}
+        >
+          {alreadySaved ? <Check className="h-5 w-5" /> : <Save className="h-5 w-5" />}
+          {alreadySaved ? "Salvo" : "Salvar Registro"}
+        </Button>
+      )}
 
       <ReserveModal
         open={modalOpen}
