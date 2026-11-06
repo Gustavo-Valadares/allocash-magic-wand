@@ -46,6 +46,7 @@ import {
 import ReserveCard from "@/components/ReserveCard";
 import ReserveModal from "@/components/ReserveModal";
 import SetNameModal from "@/components/SetNameModal";
+import ReserveViews from "@/components/ReserveViews";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -459,6 +460,7 @@ function Index() {
                   </p>
                 </div>
               ) : (
+                <ReserveViews reserves={reserves} capital={capitalValue} cards={
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {reserves.map((reserve) => (
                     <ReserveCard
@@ -471,6 +473,7 @@ function Index() {
                     />
                   ))}
                 </div>
+                } />
               )}
             </CollapsibleContent>
           </section>
