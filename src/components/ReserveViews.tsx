@@ -21,6 +21,8 @@ interface Item {
   percentage: number;
 }
 
+type Datum = { name: string; percentage: number; value: number };
+
 const COLORS = [
   "var(--chart-1)",
   "var(--chart-2)",
@@ -37,6 +39,36 @@ const TABS = [
   { label: "Pizza", icon: PieIcon },
   { label: "Barras", icon: BarChart3 },
 ];
+
+// Rótulo do tooltip usando as cores do tema (fundo popover, texto legível)
+function ChartTooltip({ active, payload }: any) {
+  if (!active || !payload || payload.length === 0) return null;
+  const d = payload[0].payload as Datum;
+  return (
+    <div className="rounded-lg border border-border bg-popover px-3 py-2 text-sm shadow-lg">
+      <p className="font-medium text-popover-foreground">{d.name}</p>
+      <p className="text-popover-foreground/80">
+        {d.percentage}% · {brl(d.value)}
+      </p>
+    </div>
+  );
+}
+
+// Tick do eixo X: nome em cima e valor em reais embaixo
+function BarTick(props: any) {
+  const { x, y, payload, data } = props;
+  const d = (data as Datum[]).find((item) => item.name === payload.value);
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text dy={12} textAnchor="middle" fill="var(--foreground)" fontSize={12}>
+        {payload.value}
+      </text>
+      <text dy={27} textAnchor="middle" fill="var(--muted-foreground)" fontSize={11}>
+        {d ? brl(d.value) : ""}
+      </text>
+    </g>
+  );
+}
 
 export default function ReserveViews({
   reserves,
@@ -64,26 +96,13 @@ export default function ReserveViews({
     embla?.reInit();
   }, [embla, reserves.length]);
 
-  const data = reserves.map((r) => ({
+  const data: Datum[] = reserves.map((r) => ({
     name: r.name,
     percentage: r.percentage,
     value: (capital * r.percentage) / 100,
   }));
 
-  const tooltip = (
-    <Tooltip
-      contentStyle={{
-        background: "var(--popover)",
-        border: "1px solid var(--border)",
-        borderRadius: 8,
-        color: "var(--popover-foreground)",
-      }}
-      formatter={(_v, _n, p) => {
-        const d = p.payload as (typeof data)[number];
-        return [`${d.percentage}% · ${brl(d.value)}`, d.name];
-      }}
-    />
-  );
+  const tooltip = <Tooltip content={<ChartTooltip />} />;
 
   return (
     <div className="space-y-3">
@@ -126,7 +145,19 @@ export default function ReserveViews({
                     outerRadius="80%"
                     paddingAngle={2}
                     stroke="var(--background)"
-                    label={({ percentage }) => `${percentage}%`}
+                    label={(props: any) => (
+                      <text
+                        x={props.x}
+                        y={props.y}
+                        dy={4}
+                        textAnchor={props.textAnchor}
+                        fill="var(--foreground)"
+                        fontSize={12}
+                        fontWeight={500}
+                      >
+                        {props.percentage}%
+                      </text>
+                    )}
                   >
                     {data.map((_, i) => (
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -149,10 +180,21 @@ export default function ReserveViews({
           <div className="min-w-0 shrink-0 grow-0 basis-full">
             <div className="h-72 rounded-xl border bg-card p-2 pt-4">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data} margin={{ left: -16, right: 8 }}>
+                <BarChart data={data} margin={{ left: -16, right: 8, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} interval={0} />
-                  <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} unit="%" />
+                  <XAxis
+                    dataKey="name"
+                    interval={0}
+                    height={50}
+                    tickLine={false}
+                    axisLine={{ stroke: "var(--border)" }}
+                    tick={<BarTick data={data} />}
+                  />
+                  <YAxis
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+                    unit="%"
+                    tickLine={false}
+                  />
                   {tooltip}
                   <Bar dataKey="percentage" radius={[6, 6, 0, 0]}>
                     {data.map((_, i) => (
