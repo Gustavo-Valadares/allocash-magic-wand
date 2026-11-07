@@ -145,14 +145,17 @@ export default function ReserveViews({
                     outerRadius="80%"
                     paddingAngle={2}
                     stroke="var(--background)"
-                    label={({ percentage }: any) => (
+                    label={(props: any) => (
                       <text
+                        x={props.x}
+                        y={props.y}
+                        dy={4}
+                        textAnchor={props.textAnchor}
                         fill="var(--foreground)"
                         fontSize={12}
                         fontWeight={500}
-                        textAnchor="middle"
                       >
-                        {percentage}%
+                        {props.percentage}%
                       </text>
                     )}
                   >
