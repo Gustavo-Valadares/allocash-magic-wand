@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep distribution total and creation eligibility in the browser-safe distribution helper so the UI and save guards use the same tested limit.

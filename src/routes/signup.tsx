@@ -14,6 +14,8 @@ export const Route = createFileRoute("/signup")({
         content: "Crie sua conta Allocash para gerenciar seu orçamento.",
       },
       { property: "og:title", content: "Cadastrar — Allocash" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         property: "og:description",
         content: "Crie sua conta Allocash para gerenciar seu orçamento.",
