@@ -16,6 +16,7 @@ import {
   Save,
 } from "lucide-react";
 import { addRecord, recordSignature } from "@/lib/history";
+import { canAddDistribution, distributionTotal } from "@/lib/distribution";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -62,6 +63,8 @@ export const Route = createFileRoute("/")({
         property: "og:description",
         content: "Distribua seu capital por porcentagem em reservas personalizadas.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Index,
@@ -135,11 +138,12 @@ function Index() {
     parseFloat(capital.replace(/[^\d.,]/g, "").replace(",", ".")) || 0;
 
   const totalPercentage = useMemo(
-    () => reserves.reduce((sum, r) => sum + r.percentage, 0),
+    () => distributionTotal(reserves),
     [reserves],
   );
 
   const remainingPercentage = 100 - totalPercentage;
+  const canCreateDistribution = canAddDistribution(reserves);
 
   const [savedSig, setSavedSig] = useState<string | null>(null);
   const currentSig = recordSignature(capitalValue, reserves);
@@ -158,6 +162,7 @@ function Index() {
   };
 
   const handleSave = (name: string, percentage: number) => {
+    if (!editingReserve && (!canCreateDistribution || percentage > remainingPercentage)) return;
     if (editingReserve) {
       setReserves((prev) =>
         prev.map((r) =>
@@ -183,6 +188,7 @@ function Index() {
   };
 
   const handleNew = () => {
+    if (!canCreateDistribution) return;
     setEditingReserve(null);
     setModalOpen(true);
   };
@@ -195,7 +201,7 @@ function Index() {
           s.id === activeSetId ? { ...s, name, reserves: [...reserves] } : s,
         ),
       );
-      toast.success("Filtro atualizado", { description: `"${name}" foi atualizado.` });
+      toast.success("Carteira atualizada", { description: `"${name}" foi atualizada.` });
     } else {
       const newSet: ReserveSet = {
         id: crypto.randomUUID(),
@@ -205,8 +211,8 @@ function Index() {
       };
       setSets((prev) => [newSet, ...prev]);
       setActiveSetId(newSet.id);
-      toast.success("Filtro salvo", {
-        description: `"${name}" foi adicionado em Meus filtros.`,
+      toast.success("Carteira salva", {
+        description: `"${name}" foi adicionada em Carteiras.`,
       });
     }
   };
@@ -218,7 +224,7 @@ function Index() {
       setReserves(set.reserves.map((r) => ({ ...r, id: crypto.randomUUID() })));
       setActiveSetId(set.id);
       setApplyingId(null);
-      toast.success("Filtro aplicado", { description: `"${set.name}" foi carregado.` });
+      toast.success("Carteira aplicada", { description: `"${set.name}" foi carregada.` });
     }, 700);
   };
 
@@ -303,7 +309,7 @@ function Index() {
               <CollapsibleTrigger asChild>
                 <button className="flex items-center gap-2 text-lg font-semibold group">
                   <Filter className="h-5 w-5" />
-                  Meus Filtros
+                  Carteiras
                   <span className="text-xs text-muted-foreground font-normal">
                     ({sets.length})
                   </span>
@@ -318,10 +324,10 @@ function Index() {
                   variant="outline"
                   onClick={handleNewSet}
                   className="gap-2"
-                  title="Remover filtro atual"
+                  title="Remover carteira atual"
                 >
                   <X className="h-4 w-4" />
-                  <span className="hidden sm:inline">Remover filtro</span>
+                  <span className="hidden sm:inline">Remover carteira</span>
                 </Button>
               )}
             </div>
@@ -330,7 +336,7 @@ function Index() {
               {sets.length === 0 ? (
                 <Card>
                   <CardContent className="py-8 text-center text-muted-foreground text-sm">
-                    Nenhum filtro salvo. Crie reservas abaixo e clique em "Salvar filtro".
+                    Nenhuma carteira salva.
                   </CardContent>
                 </Card>
               ) : (
@@ -371,7 +377,7 @@ function Index() {
                   <div>
                     <h2 className="font-semibold flex items-center gap-2">
                       <span className={activeSet ? "text-xl" : "text-lg"}>
-                        {activeSet ? activeSet.name : "Reservas"}
+                        Distribuição
                       </span>
                       <span className="text-xs text-muted-foreground font-normal">
                         ({reserves.length})
@@ -382,7 +388,7 @@ function Index() {
                     </h2>
                     {activeSet && (
                       <p className="text-xs text-muted-foreground">
-                        Editando filtro salvo
+                        {activeSet.name}
                       </p>
                     )}
                   </div>
@@ -396,7 +402,7 @@ function Index() {
                   disabled={reserves.length === 0}
                   className="gap-2 disabled:opacity-40"
                   title={
-                    reserves.length === 0 ? "Adicione ao menos uma reserva" : undefined
+                    reserves.length === 0 ? "Adicione ao menos uma distribuição" : undefined
                   }
                 >
                   {activeSet ? (
@@ -408,12 +414,12 @@ function Index() {
                     </span>
                   )}
                   <span className="hidden sm:inline">
-                    {activeSet ? "Renomear" : "Novo Filtro"}
+                    {activeSet ? "Renomear" : "Nova Carteira"}
                   </span>
                 </Button>
-                <Button onClick={handleNew} size="sm" disabled={remainingPercentage <= 0}>
+                <Button onClick={handleNew} size="sm" disabled={!canCreateDistribution} className="disabled:opacity-40">
                   <Plus className="h-4 w-4 mr-1" />
-                  Nova Reserva
+                  Nova Distribuição
                 </Button>
               </div>
             </div>
@@ -454,10 +460,7 @@ function Index() {
               {reserves.length === 0 ? (
                 <div className="text-center py-16 text-muted-foreground">
                   <PieChart className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                  <p>Nenhuma reserva criada.</p>
-                  <p className="text-sm">
-                    Clique em "Nova Reserva" para começar ou aplique um filtro salvo.
-                  </p>
+                  <p>Nenhuma distribuição criada.</p>
                 </div>
               ) : (
                 <ReserveViews reserves={reserves} capital={capitalValue} cards={
@@ -484,15 +487,16 @@ function Index() {
         <Button
           onClick={handleSaveRecord}
           disabled={alreadySaved}
-          aria-label="Salvar Registro"
-          className={`fixed right-4 bottom-20 md:bottom-6 z-40 h-14 rounded-full px-5 gap-2 shadow-lg transition-all disabled:opacity-100 ${
+          aria-label={alreadySaved ? "Registro salvo" : "Salvar Registro"}
+          title={alreadySaved ? "Registro salvo" : "Salvar Registro"}
+          size="icon"
+          className={`fixed right-4 bottom-20 md:bottom-6 z-40 h-14 w-14 rounded-full shadow-lg transition-all disabled:opacity-100 ${
             alreadySaved
               ? "bg-muted text-muted-foreground border border-border shadow-none"
               : ""
           }`}
         >
-          {alreadySaved ? <Check className="h-5 w-5" /> : <Save className="h-5 w-5" />}
-          {alreadySaved ? "Salvo" : "Salvar Registro"}
+          <Save className="h-5 w-5" />
         </Button>
       )}
 
@@ -577,7 +581,7 @@ function SortableFilterCard({
                   {set.name}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {set.reserves.length} reservas
+                  {set.reserves.length} distribuições
                 </p>
               </button>
             </div>
@@ -596,7 +600,7 @@ function SortableFilterCard({
               )}
               <button
                 type="button"
-                aria-label="Excluir filtro"
+                aria-label="Excluir carteira"
                 className="h-7 w-7 inline-flex items-center justify-center rounded-md text-destructive hover:bg-destructive/10 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
