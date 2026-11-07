@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { LayoutGrid, PieChart as PieIcon, BarChart3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   PieChart,
   Pie,
@@ -86,23 +87,26 @@ export default function ReserveViews({
 
   return (
     <div className="space-y-3">
-      <div role="tablist" className="relative grid grid-cols-3 rounded-lg bg-muted p-1">
+      <div role="tablist" aria-label="Visualização da distribuição" className="relative grid grid-cols-3 border-b-2 border-border">
         <span
-          className="absolute top-1 bottom-1 left-1 rounded-md bg-background shadow-sm transition-transform duration-300"
-          style={{ width: "calc((100% - 0.5rem) / 3)", transform: `translateX(${index * 100}%)` }}
+          className="absolute -bottom-0.5 left-0 h-0.5 rounded-full bg-primary transition-transform duration-300 motion-reduce:transition-none"
+          style={{ width: "calc(100% / 3)", transform: `translateX(${index * 100}%)` }}
         />
         {TABS.map(({ label, icon: Icon }, i) => (
-          <button
+          <Button
             key={label}
+            variant="ghost"
             role="tab"
+            aria-label={label}
+            title={label}
             aria-selected={index === i}
             onClick={() => embla?.scrollTo(i)}
-            className={`relative z-10 flex items-center justify-center gap-1.5 py-1.5 text-sm transition-colors ${
-              index === i ? "text-foreground font-medium" : "text-muted-foreground"
+            className={`relative z-10 h-11 rounded-none transition-colors ${
+              index === i ? "text-primary" : "text-muted-foreground"
             }`}
           >
-            <Icon className="h-4 w-4" /> {label}
-          </button>
+            <Icon className="h-5 w-5" />
+          </Button>
         ))}
       </div>
 

@@ -54,7 +54,7 @@ const ReserveModal = ({ open, onClose, onSave, reserve, remainingPercentage }: R
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{reserve ? "Editar Reserva" : "Nova Reserva"}</DialogTitle>
+          <DialogTitle>{reserve ? "Editar Distribuição" : "Nova Distribuição"}</DialogTitle>
           <DialogDescription>
             Disponível: {maxPercentage.toFixed(1)}%
           </DialogDescription>
